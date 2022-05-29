@@ -26,8 +26,8 @@ public class Oh_Heaven extends CardGame {
   
   final String trumpImage[] = {"bigspade.gif","bigheart.gif","bigdiamond.gif","bigclub.gif"};
 
-  static public final int seed = 30006;
-  static final Random random = new Random(seed);
+  static public int seed = 30006;
+  static Random random;
   
   // return random Enum value
   public static <T extends Enum<?>> T randomEnum(Class<T> clazz){
@@ -68,8 +68,8 @@ public class Oh_Heaven extends CardGame {
 	 
   private final String version = "1.0";
   public final int nbPlayers = 4;
-  public final int nbStartCards = 13;
-  public final int nbRounds = 3;
+  public int nbStartCards = 13;
+  public int nbRounds = 3;
   public final int madeBidBonus = 10;
   private final int handWidth = 400;
   private final int trickWidth = 40;
@@ -99,7 +99,7 @@ public class Oh_Heaven extends CardGame {
   public void setStatus(String string) { setStatusText(string); }
 
 private Player[] players = new Player[nbPlayers];
-  private int humanPlayer;
+  private int humanPlayer = -1;
 
 Font bigFont = new Font("Serif", Font.BOLD, 36);
 
@@ -157,16 +157,6 @@ private void initBids(Suit trumps, int nextPlayer) {
 	//  }
  }
 
- private void initPlayers() {
-	for (int i = 0; i < nbPlayers; i++) {
-		if (i == 0) {
-			players[i] = new Player("human");
-		} else {
-			players[i] = new Player("smart");
-		}
-	}
- }
-
 private Card selected;
 
 private void initRound() {
@@ -185,11 +175,16 @@ private void initRound() {
 			break;
 		}
 	}
-		CardListener cardListener = new CardAdapter()  // Human Player plays card
-			    {
-			      public void leftDoubleClicked(Card card) { selected = card; hands[humanPlayer].setTouchEnabled(false); }
-			    };
-		hands[humanPlayer].addCardListener(cardListener);
+		if (humanPlayer != -1) {
+			CardListener cardListener = new CardAdapter()  // Human Player plays card
+			{
+				public void leftDoubleClicked(Card card) {
+					selected = card;
+					hands[humanPlayer].setTouchEnabled(false);
+				}
+			};
+			hands[humanPlayer].addCardListener(cardListener);
+		}
 		 // graphics
 	    RowLayout[] layouts = new RowLayout[nbPlayers];
 	    for (int i = 0; i < nbPlayers; i++) {
@@ -220,6 +215,8 @@ private void initRound() {
 		} else {
 			selected = hand.get(0);
 		}
+	} else if (players[nextPlayer].getType().equals("random")) {
+		selected = randomCard(hand);
 	}
 
 	return selected;
@@ -234,7 +231,7 @@ private void playRound() {
 	Hand trick;
 	int winner;
 	Card winningCard;
-	Suit lead;
+	Suit lead = trumps;
 	int nextPlayer = random.nextInt(nbPlayers); // randomly select player to lead for this round
 	initBids(trumps, nextPlayer);
     // initScore();
@@ -250,7 +247,7 @@ private void playRound() {
         } else {
     		setStatusText("Player " + nextPlayer + " thinking...");
             delay(thinkingTime);
-			selected = selectCard(nextPlayer, trumps);
+			selected = selectCard(nextPlayer, lead);
         }
         // Lead with selected card
 	        trick.setView(this, new RowLayout(trickLocation, (trick.getNumberOfCards()+2)*trickWidth));
@@ -273,7 +270,7 @@ private void playRound() {
 	        } else {
 		        setStatusText("Player " + nextPlayer + " thinking...");
 		        delay(thinkingTime);
-		        selected = selectCard(nextPlayer, trumps);
+		        selected = selectCard(nextPlayer, lead);
 	        }
 	        // Follow with selected card
 		        trick.setView(this, new RowLayout(trickLocation, (trick.getNumberOfCards()+2)*trickWidth));
@@ -320,12 +317,36 @@ private void playRound() {
 	removeActor(trumpsActor);
 }
 
+private static String PROPERTIES_FILE_NAME;
+private final Properties properties = PropertiesLoader.loadPropertiesFile(PROPERTIES_FILE_NAME);
+
+private void initGame() {
+	if (properties.getProperty("seed") != null) {
+		seed = Integer.parseInt(properties.getProperty("seed"));
+		random = new Random(seed);
+	}
+	if (properties.getProperty("nbStartCards") != null) {
+		nbStartCards = Integer.parseInt(properties.getProperty("nbStartCards"));
+	}
+	if (properties.getProperty("rounds") != null) {
+		nbRounds = Integer.parseInt(properties.getProperty("rounds"));
+	}
+
+	if (properties.getProperty("enforceRules") != null) {
+		enforceRules = Boolean.parseBoolean(properties.getProperty("enforceRules"));
+	}
+
+	for (int i = 0; i < nbPlayers; i++) {
+		players[i] = new Player(properties.getProperty("players." + i));
+	}
+}
+
   public Oh_Heaven()
   {
 	super(700, 700, 30);
     setTitle("Oh_Heaven (V" + version + ") Constructed for UofM SWEN30006 with JGameGrid (www.aplu.ch)");
     setStatusText("Initializing...");
-	initPlayers();
+	initGame();
     initScore();
     for (int i=0; i <nbRounds; i++) {
       initTricks();
@@ -357,9 +378,9 @@ private void playRound() {
 	// System.out.println("Working Directory = " + System.getProperty("user.dir"));
 	final Properties properties;
 	if (args == null || args.length == 0) {
-	//  properties = PropertiesLoader.loadPropertiesFile(null);
+		PROPERTIES_FILE_NAME = null;
 	} else {
-	//      properties = PropertiesLoader.loadPropertiesFile(args[0]);
+		PROPERTIES_FILE_NAME = args[0];
 	}
     new Oh_Heaven();
   }

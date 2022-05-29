@@ -5,7 +5,7 @@ public class Player {
     private int trick = 0;
     private int bid = 0;
     private boolean isHuman;
-    private String[] typeList = {"human", "legal", "smart"};
+    private String[] typeList = {"human", "random", "legal", "smart"};
     String type;
 
     public int getScore() {
