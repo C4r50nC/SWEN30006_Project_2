@@ -97,10 +97,6 @@ public class Oh_Heaven extends CardGame {
   private boolean enforceRules=false;
 
   public void setStatus(String string) { setStatusText(string); }
-  
-private int[] scores = new int[nbPlayers];
-private int[] tricks = new int[nbPlayers];
-private int[] bids = new int[nbPlayers];
 
 private Player[] players = new Player[nbPlayers];
 
@@ -118,27 +114,24 @@ private void initScore() {
 
 private void updateScore(int player) {
 	removeActor(scoreActors[player]);
-	String text = "[" + String.valueOf(scores[player]) + "]" + String.valueOf(tricks[player]) + "/" + String.valueOf(bids[player]);
+	String text = "[" + String.valueOf(players[player].getScore()) + "]" + String.valueOf(players[player].getTrick()) + "/" +
+			String.valueOf(players[player].getBid());
 	scoreActors[player] = new TextActor(text, Color.WHITE, bgColor, bigFont);
 	addActor(scoreActors[player], scoreLocations[player]);
 }
 
-private void initScores() {
-	 for (int i = 0; i < nbPlayers; i++) {
-		 scores[i] = 0;
-	 }
-}
 
 private void updateScores() {
 	 for (int i = 0; i < nbPlayers; i++) {
-		 scores[i] += tricks[i];
-		 if (tricks[i] == bids[i]) scores[i] += madeBidBonus;
+		 players[i].addScore();
+		 if (players[i].getBid() == players[i].getTrick()) {
+			 players[i].addScore(madeBidBonus);
+		 }
 	 }
 }
 
 private void initTricks() {
 	 for (int i = 0; i < nbPlayers; i++) {
-		 tricks[i] = 0;
 		 players[i].resetTrick();
 	 }
 }
@@ -147,15 +140,15 @@ private void initBids(Suit trumps, int nextPlayer) {
 	int total = 0;
 	for (int i = nextPlayer; i < nextPlayer + nbPlayers; i++) {
 		 int iP = i % nbPlayers;
-		 bids[iP] = nbStartCards / 4 + random.nextInt(2);
-		 total += bids[iP];
+		 players[iP].setBid(nbStartCards / 4 + random.nextInt(2));
+		 total += players[iP].getBid();
 	 }
 	 if (total == nbStartCards) {  // Force last bid so not every bid possible
 		 int iP = (nextPlayer + nbPlayers) % nbPlayers;
-		 if (bids[iP] == 0) {
-			 bids[iP] = 1;
+		 if (players[iP].getBid() == 0) {
+			 players[iP].setBid(1);
 		 } else {
-			 bids[iP] += random.nextBoolean() ? -1 : 1;
+			 players[iP].setBid(players[iP].getBid() + (random.nextBoolean() ? -1 : 1));
 		 }
 	 }
 	// for (int i = 0; i < nbPlayers; i++) {
@@ -294,7 +287,7 @@ private void playRound() {
 		trick.draw();		
 		nextPlayer = winner;
 		setStatusText("Player " + nextPlayer + " wins trick.");
-		tricks[nextPlayer]++;
+		players[nextPlayer].addTrick();
 		updateScore(nextPlayer);
 	}
 	removeActor(trumpsActor);
@@ -306,7 +299,6 @@ private void playRound() {
     setTitle("Oh_Heaven (V" + version + ") Constructed for UofM SWEN30006 with JGameGrid (www.aplu.ch)");
     setStatusText("Initializing...");
 	initPlayers();
-    initScores();
     initScore();
     for (int i=0; i <nbRounds; i++) {
       initTricks();
@@ -316,9 +308,9 @@ private void playRound() {
     };
     for (int i=0; i <nbPlayers; i++) updateScore(i);
     int maxScore = 0;
-    for (int i = 0; i <nbPlayers; i++) if (scores[i] > maxScore) maxScore = scores[i];
+    for (int i = 0; i <nbPlayers; i++) if (players[i].getScore() > maxScore) maxScore = players[i].getScore();
     Set <Integer> winners = new HashSet<Integer>();
-    for (int i = 0; i <nbPlayers; i++) if (scores[i] == maxScore) winners.add(i);
+    for (int i = 0; i <nbPlayers; i++) if (players[i].getScore() == maxScore) winners.add(i);
     String winText;
     if (winners.size() == 1) {
     	winText = "Game over. Winner is player: " +
