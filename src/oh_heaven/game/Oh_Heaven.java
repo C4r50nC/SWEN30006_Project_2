@@ -102,12 +102,15 @@ private int[] scores = new int[nbPlayers];
 private int[] tricks = new int[nbPlayers];
 private int[] bids = new int[nbPlayers];
 
+private Player[] players = new Player[nbPlayers];
+
 Font bigFont = new Font("Serif", Font.BOLD, 36);
 
 private void initScore() {
 	 for (int i = 0; i < nbPlayers; i++) {
 		 // scores[i] = 0;
-		 String text = "[" + String.valueOf(scores[i]) + "]" + String.valueOf(tricks[i]) + "/" + String.valueOf(bids[i]);
+		 Player player = players[i];
+		 String text = "[" + String.valueOf(player.getScore()) + "]" + String.valueOf(player.getTrick()) + "/" + String.valueOf(player.getBid());
 		 scoreActors[i] = new TextActor(text, Color.WHITE, bgColor, bigFont);
 		 addActor(scoreActors[i], scoreLocations[i]);
 	 }
@@ -136,6 +139,7 @@ private void updateScores() {
 private void initTricks() {
 	 for (int i = 0; i < nbPlayers; i++) {
 		 tricks[i] = 0;
+		 players[i].resetTrick();
 	 }
 }
 
@@ -157,6 +161,16 @@ private void initBids(Suit trumps, int nextPlayer) {
 	// for (int i = 0; i < nbPlayers; i++) {
 	// 	 bids[i] = nbStartCards / 4 + 1;
 	//  }
+ }
+
+ private void initPlayers() {
+	for (int i = 0; i < nbPlayers; i++) {
+		if (i == 0) {
+			players[i] = new Player(true);
+		} else {
+			players[i] = new Player(false);
+		}
+	}
  }
 
 private Card selected;
@@ -291,6 +305,7 @@ private void playRound() {
 	super(700, 700, 30);
     setTitle("Oh_Heaven (V" + version + ") Constructed for UofM SWEN30006 with JGameGrid (www.aplu.ch)");
     setStatusText("Initializing...");
+	initPlayers();
     initScores();
     initScore();
     for (int i=0; i <nbRounds; i++) {
