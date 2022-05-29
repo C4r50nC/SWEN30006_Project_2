@@ -99,6 +99,7 @@ public class Oh_Heaven extends CardGame {
   public void setStatus(String string) { setStatusText(string); }
 
 private Player[] players = new Player[nbPlayers];
+  private int humanPlayer;
 
 Font bigFont = new Font("Serif", Font.BOLD, 36);
 
@@ -159,9 +160,9 @@ private void initBids(Suit trumps, int nextPlayer) {
  private void initPlayers() {
 	for (int i = 0; i < nbPlayers; i++) {
 		if (i == 0) {
-			players[i] = new Player(true);
+			players[i] = new Player("human");
 		} else {
-			players[i] = new Player(false);
+			players[i] = new Player("smart");
 		}
 	}
  }
@@ -178,11 +179,17 @@ private void initRound() {
 			   hands[i].sort(Hand.SortType.SUITPRIORITY, true);
 		 }
 		 // Set up human player for interaction
+	for (int i = 0; i < nbPlayers; i++) {
+		if (players[i].getType().equals("human")) {
+			humanPlayer = i;
+			break;
+		}
+	}
 		CardListener cardListener = new CardAdapter()  // Human Player plays card
 			    {
-			      public void leftDoubleClicked(Card card) { selected = card; hands[0].setTouchEnabled(false); }
+			      public void leftDoubleClicked(Card card) { selected = card; hands[humanPlayer].setTouchEnabled(false); }
 			    };
-		hands[0].addCardListener(cardListener);
+		hands[humanPlayer].addCardListener(cardListener);
 		 // graphics
 	    RowLayout[] layouts = new RowLayout[nbPlayers];
 	    for (int i = 0; i < nbPlayers; i++) {
@@ -196,6 +203,26 @@ private void initRound() {
 //	    for (int i = 1; i < nbPlayers; i++) // This code can be used to visually hide the cards in a hand (make them face down)
 //	      hands[i].setVerso(true);			// You do not need to use or change this code.
 	    // End graphics
+ }
+
+ private Card selectCard(int nextPlayer, Suit lead) {
+	Card selected = null;
+	Hand hand = hands[nextPlayer];
+	if (players[nextPlayer].getType().equals("legal")) {
+		if (hand.getNumberOfCardsWithSuit(lead) > 0) {
+			selected = randomCard(hand.getCardsWithSuit(lead));
+		} else {
+			selected = randomCard(hand);
+		}
+	 } else if (players[nextPlayer].getType().equals("smart")) {
+		if (hand.getNumberOfCardsWithSuit(lead) > 0) {
+			selected = hand.getCardsWithSuit(lead).get(0);
+		} else {
+			selected = hand.get(0);
+		}
+	}
+
+	return selected;
  }
 
 private void playRound() {
@@ -216,14 +243,14 @@ private void playRound() {
 		trick = new Hand(deck);
     	selected = null;
     	// if (false) {
-        if (0 == nextPlayer) {  // Select lead depending on player type
-    		hands[0].setTouchEnabled(true);
+        if (humanPlayer == nextPlayer) {  // Select lead depending on player type
+    		hands[humanPlayer].setTouchEnabled(true);
     		setStatus("Player 0 double-click on card to lead.");
     		while (null == selected) delay(100);
         } else {
     		setStatusText("Player " + nextPlayer + " thinking...");
             delay(thinkingTime);
-            selected = randomCard(hands[nextPlayer]);
+			selected = selectCard(nextPlayer, trumps);
         }
         // Lead with selected card
 	        trick.setView(this, new RowLayout(trickLocation, (trick.getNumberOfCards()+2)*trickWidth));
@@ -239,14 +266,14 @@ private void playRound() {
 			if (++nextPlayer >= nbPlayers) nextPlayer = 0;  // From last back to first
 			selected = null;
 			// if (false) {
-	        if (0 == nextPlayer) {
-	    		hands[0].setTouchEnabled(true);
+	        if (humanPlayer == nextPlayer) {
+	    		hands[humanPlayer].setTouchEnabled(true);
 	    		setStatus("Player 0 double-click on card to follow.");
 	    		while (null == selected) delay(100);
 	        } else {
 		        setStatusText("Player " + nextPlayer + " thinking...");
 		        delay(thinkingTime);
-		        selected = randomCard(hands[nextPlayer]);
+		        selected = selectCard(nextPlayer, trumps);
 	        }
 	        // Follow with selected card
 		        trick.setView(this, new RowLayout(trickLocation, (trick.getNumberOfCards()+2)*trickWidth));

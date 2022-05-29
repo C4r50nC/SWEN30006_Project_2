@@ -5,6 +5,8 @@ public class Player {
     private int trick = 0;
     private int bid = 0;
     private boolean isHuman;
+    private String[] typeList = {"human", "legal", "smart"};
+    String type;
 
     public int getScore() {
         return score;
@@ -21,6 +23,9 @@ public class Player {
     public void setBid(int bid) {
         this.bid = bid;
     }
+    public String getType() {
+        return type;
+    }
     public boolean getIsHuman() {
         return isHuman;
     }
@@ -34,7 +39,18 @@ public class Player {
         score += bid;
     }
 
-    public Player(boolean isHuman) {
-        this.isHuman = isHuman;
+    public Player(String type) {
+        boolean hasType = false;
+        for (int i = 0; i < typeList.length; i++) {
+            if (type.equals(typeList[i])) {
+                hasType = true;
+                this.type = type;
+                break;
+            }
+        }
+        if (!hasType) {
+            System.out.println("Invalid player type");
+            System.exit(1);
+        }
     }
 }
